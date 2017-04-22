@@ -1,0 +1,84 @@
+#!/bin/bash
+# Script to easily run a temporary webserver using lighttpd 
+# Licence WTFPL
+
+man () {
+cat<<EOF
+Launch a web server using lighttp
+Usage: $0
+     path   Root directory to use (current folder by default)
+  -p 8080   Listen to the port 8080
+  -h        Print this help
+EOF
+}
+
+
+ip=$(ifconfig | grep 'inet ' | grep -v -m 1  '127.0.0.1'  | awk '{print $2}')
+conffile="/tmp/lighttp_conf_$RANDOM"
+path="$(pwd)"
+port=8080
+
+
+while [ "$1" ]
+do
+  case "$1" in
+    -p)
+      port="$2" 
+      shift
+      shift
+      ;;
+    -h)
+      man
+      exit 0
+      ;;
+    *)
+      if [ ${1:0:1} == '/' -o ${1:0:1} == '~' ]
+      then
+        path="$1"
+      else
+        path="$path/$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [ ! -d "$path" ]
+then
+  echo "$path doesn't exist"
+  man
+  exit 1
+fi
+
+cat<<EOF > "$conffile"
+server.port		= $port
+server.username		= "$USER"
+server.groupname	= "users"
+server.document-root	= "$path"
+server.errorlog		= "/dev/null"
+dir-listing.activate	= "enable"
+server.follow-symlink = "enable" 
+index-file.names	= ( "index.html" )
+mimetype.assign		= (
+				".html" => "text/html",
+				".txt" => "text/plain",
+				".css" => "text/css",
+				".js" => "application/x-javascript",
+				".jpg" => "image/jpeg",
+				".jpeg" => "image/jpeg",
+				".gif" => "image/gif",
+				".png" => "image/png",
+				"" => "application/octet-stream"
+			)
+EOF
+
+
+echo Root directory: "$path"
+echo Port: "$port"
+echo Server accessible via: "http://$ip:$port/"
+
+echo Running lighttpd
+lighttpd -D -f "$conffile"
+
+echo Stoping lighttpd
+rm "$conffile"
