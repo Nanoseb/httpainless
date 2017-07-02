@@ -73,9 +73,11 @@ mimetype.assign		= (
 EOF
 
 
+extip=$(curl http://bot.whatismyipaddress.com)
 echo Root directory: "$path"
 echo Port: "$port"
 echo Server accessible via: "http://$ip:$port/"
+echo Server accessible via: "http://$extip:$port/"
 
 echo Running lighttpd
 lighttpd -D -f "$conffile"
